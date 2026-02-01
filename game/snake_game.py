@@ -1,0 +1,135 @@
+"""Snake game environment"""
+
+import random
+import numpy as np
+from enum import Enum
+
+
+class Direction(Enum):
+    """Direction enum for snake movement"""
+    UP = (0, -1)
+    DOWN = (0, 1)
+    LEFT = (-1, 0)
+    RIGHT = (1, 0)
+
+
+class SnakeGame:
+    """Snake game environment for AI training"""
+    
+    def __init__(self, grid_width=10, grid_height=10):
+        """
+        Initialize the Snake game.
+        
+        Args:
+            grid_width: Width of the game grid
+            grid_height: Height of the game grid
+        """
+        self.grid_width = grid_width
+        self.grid_height = grid_height
+        self.reset()
+    
+    def reset(self):
+        """Reset the game to initial state"""
+        # Start snake in middle of grid
+        start_x = self.grid_width // 2
+        start_y = self.grid_height // 2
+        self.snake = [(start_x, start_y)]
+        self.direction = Direction.RIGHT
+        self.next_direction = Direction.RIGHT
+        self.food = self._spawn_food()
+        self.score = 0
+        self.steps = 0
+        
+        return self._get_state()
+    
+    def step(self, action):
+        """
+        Execute one step of the game.
+        
+        Args:
+            action: Action to take (0=up, 1=down, 2=left, 3=right)
+        
+        Returns:
+            state: Current game state
+            reward: Reward for this action
+            done: Whether the game is over
+            info: Additional information
+        """
+        self.steps += 1
+        
+        # Convert action to direction
+        direction_map = {
+            0: Direction.UP,
+            1: Direction.DOWN,
+            2: Direction.LEFT,
+            3: Direction.RIGHT
+        }
+        self.next_direction = direction_map[action]
+        
+        # Move snake
+        self.direction = self.next_direction
+        head_x, head_y = self.snake[0]
+        dx, dy = self.direction.value
+        new_head = (head_x + dx, head_y + dy)
+        
+        # Check if hit wall
+        if not self._is_valid_position(new_head):
+            return self._get_state(), -10, True, {"reason": "hit_wall"}
+        
+        # Check if hit self
+        if new_head in self.snake:
+            return self._get_state(), -10, True, {"reason": "hit_self"}
+        
+        # Move snake
+        self.snake.insert(0, new_head)
+        reward = -0.01  # Small penalty for each step
+        
+        # Check if ate food
+        if new_head == self.food:
+            self.score += 1
+            reward = 10
+            self.food = self._spawn_food()
+        else:
+            # Remove tail if didn't eat food
+            self.snake.pop()
+        
+        done = False
+        return self._get_state(), reward, done, {"score": self.score}
+    
+    def _is_valid_position(self, pos):
+        """Check if position is within grid boundaries"""
+        x, y = pos
+        return 0 <= x < self.grid_width and 0 <= y < self.grid_height
+    
+    def _spawn_food(self):
+        """Spawn food at random location not occupied by snake"""
+        while True:
+            x = random.randint(0, self.grid_width - 1)
+            y = random.randint(0, self.grid_height - 1)
+            if (x, y) not in self.snake:
+                return (x, y)
+    
+    def _get_state(self):
+        """Get current game state"""
+        return {
+            'snake': self.snake.copy(),
+            'food': self.food,
+            'score': self.score,
+            'steps': self.steps
+        }
+    
+    def get_snake_head(self):
+        """Get snake head position"""
+        return self.snake[0]
+    
+    def get_food_position(self):
+        """Get food position"""
+        return self.food
+    
+    def get_snake_body(self):
+        """Get snake body positions"""
+        return self.snake.copy()
+    
+    def get_score(self):
+        """Get current score"""
+        return self.score
