@@ -95,9 +95,12 @@ def main():
         choice = input("Enter your choice (1-8): ").strip()
 
         if choice == "1":
-            # Ask whether to resume previous training or start new
-            resume_input = input("\nResume previous training if available? (y/n): ").strip().lower()
-            resume = resume_input in ("y", "yes")
+            # Ask whether to continue training the saved agent (default: yes)
+            resume_input = input("\nContinue training saved agent if available? (Y/n): ").strip().lower()
+            if resume_input in ("n", "no"):
+                resume = False
+            else:
+                resume = True
 
             # Ask how many episodes to train in this session
             try:
@@ -110,14 +113,38 @@ def main():
                 print("Invalid number entered, using default.")
                 episodes_to_run = NUM_EPISODES
 
-            print(f"\nStarting training for {episodes_to_run} episodes (resume={resume})...")
+            # Ask whether to render demo gameplay during training
+            render_train_input = input("Render demo gameplay during training? (y/N): ").strip().lower()
+            render_during_training = render_train_input in ("y", "yes")
+            if render_during_training:
+                try:
+                    interval_in = input("Render every N episodes (default 500): ").strip()
+                    render_interval = int(interval_in) if interval_in else 500
+                except ValueError:
+                    print("Invalid number, using default 500")
+                    render_interval = 500
+                try:
+                    pause_in = input("Frame pause for demo render in seconds (default 0.1): ").strip()
+                    render_pause = float(pause_in) if pause_in else 0.1
+                except ValueError:
+                    print("Invalid value, using default 0.1s")
+                    render_pause = 0.1
+            else:
+                render_interval = 500
+                render_pause = 0.1
+
+            print(f"\nStarting training for {episodes_to_run} episodes (resume={resume}, render_demo={render_during_training})...")
             train_agent(
                 num_episodes=episodes_to_run,
                 max_steps=MAX_STEPS_PER_EPISODE,
                 save_model=True,
                 resume=resume,
                 model_path=MODEL_SAVE_PATH,
-                stats_path=STATS_SAVE_PATH
+                stats_path=STATS_SAVE_PATH,
+                verbose=True,
+                render_during_training=render_during_training,
+                render_interval=render_interval,
+                render_pause=render_pause
             )
         elif choice == "2":
             print("\nTesting trained agent...")
@@ -125,7 +152,16 @@ def main():
 
         elif choice == "3":
             print("\nPlaying a game...")
-            score = play_single_game(verbose=True)
+            render_input = input("Render the game visually? (y/N): ").strip().lower()
+            render = render_input in ("y", "yes")
+            try:
+                pause_in = input("Frame pause in seconds (default 0.1): ").strip()
+                render_pause = float(pause_in) if pause_in else 0.1
+            except ValueError:
+                print("Invalid value, using default 0.1s")
+                render_pause = 0.1
+
+            score = play_single_game(verbose=True, render=render, render_pause=render_pause)
             print(f"\nScore: {score}")
 
         elif choice == "4":
@@ -189,6 +225,26 @@ def main():
                     print("Invalid number entered, using default.")
                     episodes_to_run = NUM_EPISODES
 
+                # Optionally render demo gameplay during resumed training
+                render_train_input = input("Render demo gameplay during training? (y/N): ").strip().lower()
+                render_during_training = render_train_input in ("y", "yes")
+                if render_during_training:
+                    try:
+                        interval_in = input("Render every N episodes (default 500): ").strip()
+                        render_interval = int(interval_in) if interval_in else 500
+                    except ValueError:
+                        print("Invalid number, using default 500")
+                        render_interval = 500
+                    try:
+                        pause_in = input("Frame pause for demo render in seconds (default 0.1): ").strip()
+                        render_pause = float(pause_in) if pause_in else 0.1
+                    except ValueError:
+                        print("Invalid value, using default 0.1s")
+                        render_pause = 0.1
+                else:
+                    render_interval = 500
+                    render_pause = 0.1
+
                 train_agent(
                     num_episodes=episodes_to_run,
                     max_steps=MAX_STEPS_PER_EPISODE,
@@ -197,7 +253,10 @@ def main():
                     model_path=cp_model,
                     stats_path=cp_stats,
                     checkpoint=True,
-                    checkpoint_dir=CHECKPOINT_DIR
+                    checkpoint_dir=CHECKPOINT_DIR,
+                    render_during_training=render_during_training,
+                    render_interval=render_interval,
+                    render_pause=render_pause
                 )
 
             elif sub == "2":
