@@ -3,6 +3,7 @@
 import numpy as np
 import random
 import pickle
+import os
 from utils.state_representation import encode_state
 
 
@@ -104,24 +105,55 @@ class QAgent:
     
     def save_model(self, filepath):
         """
-        Save the Q-table to a file.
-        
+        Save the agent (Q-table and metadata) to a file.
+
         Args:
             filepath: Path to save the model
         """
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        data = {
+            'q_table': self.q_table,
+            'epsilon': self.epsilon,
+            'learning_rate': self.learning_rate,
+            'discount_factor': self.discount_factor,
+            'epsilon_decay': self.epsilon_decay,
+            'epsilon_min': self.epsilon_min,
+            'grid_width': self.grid_width,
+            'grid_height': self.grid_height,
+            'num_actions': self.num_actions
+        }
         with open(filepath, 'wb') as f:
-            pickle.dump(self.q_table, f)
+            pickle.dump(data, f)
         print(f"Model saved to {filepath}")
-    
+
     def load_model(self, filepath):
         """
-        Load the Q-table from a file.
-        
+        Load the agent (Q-table and metadata) from a file.
+
         Args:
             filepath: Path to load the model from
         """
         with open(filepath, 'rb') as f:
-            self.q_table = pickle.load(f)
+            data = pickle.load(f)
+
+        # Load Q-table and metadata if present
+        if isinstance(data, dict) and 'q_table' in data:
+            self.q_table = data.get('q_table', {})
+            self.epsilon = data.get('epsilon', self.epsilon)
+            self.learning_rate = data.get('learning_rate', self.learning_rate)
+            self.discount_factor = data.get('discount_factor', self.discount_factor)
+            self.epsilon_decay = data.get('epsilon_decay', self.epsilon_decay)
+            self.epsilon_min = data.get('epsilon_min', self.epsilon_min)
+
+            # Warn if grid sizes differ
+            gw = data.get('grid_width')
+            gh = data.get('grid_height')
+            if gw and gh and (gw != self.grid_width or gh != self.grid_height):
+                print(f"Warning: loaded model grid {gw}x{gh} does not match agent grid {self.grid_width}x{self.grid_height}")
+        else:
+            # Backwards compatibility: previously saved just the q_table
+            self.q_table = data
+
         print(f"Model loaded from {filepath}")
     
     def get_q_table_size(self):
