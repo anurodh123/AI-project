@@ -26,3 +26,8 @@ REWARD_BOUNDARY = -10
 # Model settings
 MODEL_SAVE_PATH = "saved_models/snake_ai_model.pkl"
 STATS_SAVE_PATH = "saved_models/training_stats.pkl"
+
+# Checkpoint settings (timestamped checkpoints saved under AI_PROJECT folder)
+CHECKPOINT_DIR = "saved_models/checkpoints"
+CHECKPOINT_MODEL_FILENAME = "model.pkl"
+CHECKPOINT_STATS_FILENAME = "stats.pkl"
