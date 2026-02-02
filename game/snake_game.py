@@ -133,3 +133,49 @@ class SnakeGame:
     def get_score(self):
         """Get current score"""
         return self.score
+
+    def render(self, ax=None, pause=0.05, cmap='viridis'):
+        """
+        Render the current game state using matplotlib.
+
+        Args:
+            ax: Optional matplotlib Axes to draw into. If None a new figure is created.
+            pause: Time to pause after drawing (seconds)
+            cmap: Colormap for display
+        """
+        try:
+            import matplotlib.pyplot as plt
+            import numpy as np
+        except Exception as e:
+            raise RuntimeError(f"Rendering requires matplotlib and numpy: {e}")
+
+        grid = np.zeros((self.grid_height, self.grid_width), dtype=int)
+
+        # Mark snake body (1) and head (3)
+        for i, (x, y) in enumerate(self.snake):
+            # note: numpy array indexed [row, col] -> [y, x]
+            val = 1
+            if i == 0:
+                val = 3
+            grid[y, x] = val
+
+        # Mark food (2)
+        fx, fy = self.food
+        grid[fy, fx] = 2
+
+        created_fig = False
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(4, 4))
+            created_fig = True
+
+        ax.clear()
+        # Use a discrete colormap for clarity: 0-empty,1-snake,2-food,3-head
+        cmap = plt.get_cmap('tab10')
+        ax.imshow(grid, cmap=cmap, vmin=0, vmax=3)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_title(f"Score: {self.score}")
+
+        plt.pause(pause)
+        if created_fig:
+            plt.show(block=False)
