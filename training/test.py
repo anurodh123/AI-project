@@ -61,45 +61,70 @@ def test_trained_agent(num_tests=10):
     print(f"Worst Score: {min(scores)}")
 
 
-def play_single_game(verbose=True):
+def play_single_game(verbose=True, render=False, render_pause=0.1):
     """
     Play a single game with the trained agent.
-    
+
     Args:
         verbose: Whether to print detailed game information
+        render: Whether to render the game visually using matplotlib
+        render_pause: Pause time between frames when rendering
     """
     game = SnakeGame(GRID_WIDTH, GRID_HEIGHT)
     agent = QAgent(GRID_WIDTH, GRID_HEIGHT)
-    
+
     try:
         agent.load_model(MODEL_SAVE_PATH)
     except FileNotFoundError:
         print(f"Model not found at {MODEL_SAVE_PATH}")
         return
-    
+
     state = game.reset()
     max_steps = 500
-    
+
+    if render:
+        try:
+            import matplotlib.pyplot as plt
+            fig, ax = plt.subplots(figsize=(4, 4))
+            plt.ion()
+        except Exception as e:
+            print(f"Rendering unavailable: {e}. Continuing without render.")
+            render = False
+
     if verbose:
         print("\nStarting game...")
         print("-" * 50)
-    
+
     for step in range(max_steps):
         action = agent.get_action(state, training=False)
         next_state, reward, done, info = game.step(action)
-        
+
+        if render:
+            try:
+                game.render(ax=ax, pause=render_pause)
+            except Exception as e:
+                print(f"Render failed: {e}")
+                render = False
+
         if verbose and step % 50 == 0:
             print(f"Step {step}: Score = {game.get_score()}, Snake Length = {len(game.get_snake_body())}")
-        
+
         state = next_state
-        
+
         if done:
             break
-    
+
+    if render:
+        try:
+            plt.ioff()
+            plt.show()
+        except Exception:
+            pass
+
     if verbose:
         print("-" * 50)
         print(f"Game Over! Final Score: {game.get_score()}")
-    
+
     return game.get_score()
 
 

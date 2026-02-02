@@ -13,7 +13,7 @@ from utils.config import *
 
 
 def train_agent(num_episodes=NUM_EPISODES, max_steps=MAX_STEPS_PER_EPISODE, 
-                save_model=True, resume=False, model_path=MODEL_SAVE_PATH, stats_path=STATS_SAVE_PATH, agent=None, checkpoint=True, checkpoint_dir=CHECKPOINT_DIR):
+                save_model=True, resume=False, model_path=MODEL_SAVE_PATH, stats_path=STATS_SAVE_PATH, agent=None, checkpoint=True, checkpoint_dir=CHECKPOINT_DIR, verbose=True, render_during_training=False, render_interval=500, render_pause=0.1):
     """
     Train the Q-Learning agent to play Snake.
 
@@ -76,6 +76,17 @@ def train_agent(num_episodes=NUM_EPISODES, max_steps=MAX_STEPS_PER_EPISODE,
     if checkpoint:
         os.makedirs(checkpoint_dir, exist_ok=True)
 
+    # Live plotting support removed — training will not open a live matplotlib window
+
+    # Prepare demo game for rendering during training if requested
+    demo_game = None
+    if render_during_training:
+        try:
+            demo_game = SnakeGame(GRID_WIDTH, GRID_HEIGHT)
+        except Exception as e:
+            print(f"Failed to create demo game for rendering: {e}. Disabling demo renders.")
+            render_during_training = False
+
     # Training loop
     for episode in range(num_episodes):
         state = game.reset()
@@ -106,6 +117,52 @@ def train_agent(num_episodes=NUM_EPISODES, max_steps=MAX_STEPS_PER_EPISODE,
         scores.append(episode_score)
         steps_list.append(episode_steps)
         epsilon_values.append(agent.epsilon)
+
+        # Compute total episode index after updating stats
+        total_episode_index = len(scores)
+
+        # Verbose per-episode summary
+        if verbose and total_episode_index % 10 == 0:
+            recent_avg = np.mean(scores[-100:]) if len(scores) >= 1 else 0
+            print(f"Episode {total_episode_index} - Score: {episode_score} | Recent Avg(100): {recent_avg:.2f} | Epsilon: {agent.epsilon:.4f} | Q-Table: {agent.get_q_table_size()}")
+
+        # Live plotting update removed — no live matplotlib windows during training
+
+        # Optionally render a demo episode to watch agent play during training
+        if render_during_training and demo_game is not None and total_episode_index % render_interval == 0:
+            try:
+                # Prepare an interactive matplotlib figure for rendering the demo
+                import matplotlib.pyplot as plt
+                plt.ion()
+                fig, ax = plt.subplots(figsize=(4, 4))
+
+                if verbose:
+                    print(f"\nRendering demo episode at total episode {total_episode_index}...")
+
+                demo_state = demo_game.reset()
+                for demo_step in range(max_steps):
+                    demo_action = agent.get_action(demo_state, training=False)
+                    demo_state, demo_reward, demo_done, _ = demo_game.step(demo_action)
+                    # Use the ax so we don't create many figures
+                    demo_game.render(ax=ax, pause=render_pause)
+                    if demo_done:
+                        break
+
+                # Cleanup interactive figure
+                try:
+                    plt.ioff()
+                    plt.show()
+                    plt.close(fig)
+                except Exception:
+                    pass
+
+                if verbose:
+                    print(f"Demo finished. Demo Score: {demo_game.get_score()}")
+
+            except Exception as e:
+                print(f"Demo render failed: {e}. Disabling demo renders to avoid repeated failures.")
+                # disable future demo renders to avoid flooding with errors
+                render_during_training = False
 
         # Print progress and periodic checkpointing
         total_episode_index = len(scores)
