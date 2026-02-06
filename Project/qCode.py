@@ -281,7 +281,10 @@ class Agent():
         # learned best action i.e. exploitation
         return nPy.argmax(self.table[state])
     
-    def train(self):
+    def train(self,generation):
+        filename = f"generation/{generation}.pickle"
+        with open(filename, 'rb') as file:
+            table = pickle.load(file)
         for i in range(1, self.genCount + 1):
             self.environment  = Game()
             hungrySteps = 0
@@ -323,5 +326,6 @@ class Agent():
             # track length and score
             self.score.append(self.environment.pLength - 1)
             self.survived.append(self.environment.survived)
+
 
 
