@@ -1,4 +1,4 @@
-import random
+.import random
 import numpy as nPy
 import pygame
 import pickle
@@ -284,7 +284,7 @@ class Agent():
     def train(self,generation):
         filename = f"generation/{generation}.pickle"
         with open(filename, 'rb') as file:
-            table = pickle.load(file)
+            self.table = pickle.load(file)
         for i in range(1, self.genCount + 1):
             self.environment  = Game()
             hungrySteps = 0
@@ -326,6 +326,7 @@ class Agent():
             # track length and score
             self.score.append(self.environment.pLength - 1)
             self.survived.append(self.environment.survived)
+
 
 
 
