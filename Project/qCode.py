@@ -266,11 +266,14 @@ class Agent():
         self.generations = 1.0
         self.genDiscount = 0.9992
         self.minGen = 0.001
-        self.genCount = 25000
-        self.table = nPy.zeros((2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4))
+        self.genCount = 50000
         self.environment = Game()
         self.score = []
         self.survived = []
+        filename = f"generation/25000.pickle"
+        with open(filename, 'rb') as file:
+            self.table = pickle.load(file)
+        time.sleep(5)
         
     # switching from exploration and exploitation
     def getAction(self, state):
@@ -281,11 +284,8 @@ class Agent():
         # learned best action i.e. exploitation
         return nPy.argmax(self.table[state])
     
-    def train(self,generation):
-        filename = f"generation/{generation}.pickle"
-        with open(filename, 'rb') as file:
-            self.table = pickle.load(file)
-        for i in range(1, self.genCount + 1):
+    def train(self):
+        for i in range(25000, self.genCount + 1):
             self.environment  = Game()
             hungrySteps = 0
             length = self.environment.pLength
@@ -297,7 +297,7 @@ class Agent():
                 self.survived = []
                
             # save latest model in multiples of 500
-            if (i % 500 == 0):
+            if (i % 500 == 0) and (i!=25000) :
                 with open(f'generation/{i}.pickle', 'wb') as file:
                     pickle.dump(self.table, file)
                 
@@ -326,6 +326,8 @@ class Agent():
             # track length and score
             self.score.append(self.environment.pLength - 1)
             self.survived.append(self.environment.survived)
+            self.generation = i
+
 
 
 
