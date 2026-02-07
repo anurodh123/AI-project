@@ -4,9 +4,10 @@ qCode.Game()
 qCode.Agent()
 
 learnTest1=qCode.Agent()
-qCode.Agent.train(learnTest1,25000)
+qCode.Agent.train(learnTest1)
 '''
 snake=qCode.Game()
 qCode.Game.runGame(snake,500)
 '''
+
 
